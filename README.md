@@ -42,15 +42,12 @@ Why did I create this tool? Simply put, I got fed up with the web-based YouTube 
 4. **Unlimited Speed**: Download speed is solely dependent on the user's internet connection.
 5. **Basic Editing**: Offers basic video editing features for downloaded videos.
 
-## Known Issues
-
-- Certain videos cannot merge (convert) audio and video files after downloading.
-- The issue can be resolved by clicking "Search Resolution" multiple times.
-    ![image](https://hackmd.io/_uploads/SkrpG4YP1l.png)
-
-
 ## Changelog 
 
 *2024/10/2 ver1.02* 
 - Fixed the issue where "Search Resolution" caused an error.
 - Now, by selecting the "Playlist?" option on the right, you can download entire playlists.
+
+*2025/2/12 ver1.02.1*
+- Fix the issue where the entire program cannot download videos properly.
+- Fix the issue where specific videos cannot be downloaded.
