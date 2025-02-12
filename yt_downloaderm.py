@@ -108,6 +108,13 @@ def getTheBestResolution(video):
     #print(resolutions[0])
     return resolutions[0]
 
+def sanitize_filename(filename):
+    # 1) 替換 Windows 不允許的字元
+    filename = re.sub(r'[<>:"/\\|?*]', '_', filename)
+    # 2) 避免控制字元或非可見字元
+    filename = re.sub(r'[\x00-\x1f\x80-\x9f]', '', filename)
+    return filename
+
 def generate_new_filename(filename):
     base, ext = os.path.splitext(filename)
     counter = 1
@@ -226,7 +233,7 @@ def download_video(url_entry, video_resolution, download_option, is_playlist_var
                             video_path = video_stream.download(filename='video.mp4')
                             audio_path = audio_stream.download(filename='audio.mp4')
 
-                            video_title = video.title.replace(" ", "_")  # 獲取影片標題並替換空格
+                            video_title = sanitize_filename(video.title)  # 獲取影片標題並替換空格
                             output_path = os.path.join(save_path, f'{video_title}.mp4' if download_type == 'video' else f'{video_title}.mp3')
                             if os.path.exists(output_path):
                                 output_path = generate_new_filename(output_path)
@@ -248,7 +255,7 @@ def download_video(url_entry, video_resolution, download_option, is_playlist_var
                             audio_stream = video.streams.filter(only_audio=True, file_extension='mp4').first()
                             audio_path = audio_stream.download(filename='audio.mp4')
                             
-                            video_title = video.title.replace(" ", "_")  # 獲取影片標題並替換空格
+                            video_title = sanitize_filename(video.title)  # 獲取影片標題並替換空格
                             output_path = os.path.join(save_path, f'{video_title}.mp3')
                             if os.path.exists(output_path):
                                 output_path = generate_new_filename(output_path)
@@ -281,7 +288,7 @@ def download_video(url_entry, video_resolution, download_option, is_playlist_var
                         video_path = video_stream.download(filename='video.mp4')
                         audio_path = audio_stream.download(filename='audio.mp4')
 
-                        video_title = video.title.replace(" ", "_")  # 獲取影片標題並替換空格
+                        video_title = sanitize_filename(video.title)  # 獲取影片標題並替換空格
                         output_path = os.path.join(save_path, f'{video_title}.mp4' if download_type == 'video' else f'{video_title}.mp3')
                         if os.path.exists(output_path):
                             output_path = generate_new_filename(output_path)
@@ -292,15 +299,17 @@ def download_video(url_entry, video_resolution, download_option, is_playlist_var
                             command = [
                                 ffmpeg_path, '-i', video_path, '-i', audio_path, '-c:v', 'copy', '-c:a', 'aac', '-strict', 'experimental', output_path
                             ]
-                            process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding='utf-8', creationflags=subprocess.CREATE_NO_WINDOW)
+                            process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding='utf-8', errors='replace', creationflags=subprocess.CREATE_NO_WINDOW)
                             update_progress_bar(process, video.length, progress_bar, progress_label, window)
 
-                            process.wait()
+                            stdout_data, stderr_data = process.communicate()  # 一次性讀完輸出
                             
                             if process.returncode == 0:
                                 showinfo(title='Download Complete', message='Download completed successfully.')
                             else:
-                                showerror(title='FFmpeg Error', message=f'Error processing media: {process.stderr.read()}')
+                                print(f"FFmpeg Return Code: {process.returncode}")
+                                print(stderr_data)
+                                showerror(title='FFmpeg Error', message=f'Error processing media:\n{stderr_data}')
                         elif process_type == 'quick':
                             start_keyframe = get_nearest_keyframe_before(video_path, start_time)
                             end_keyframe = get_nearest_keyframe_after(video_path, end_time)
@@ -388,7 +397,7 @@ def download_video(url_entry, video_resolution, download_option, is_playlist_var
                         audio_stream = video.streams.filter(only_audio=True, file_extension='mp4').first()
                         audio_path = audio_stream.download(filename='audio.mp4')
                         
-                        video_title = video.title.replace(" ", "_")  # 獲取影片標題並替換空格
+                        video_title = sanitize_filename(video.title)  # 獲取影片標題並替換空格
                         output_path = os.path.join(save_path, f'{video_title}.mp3')
                         if os.path.exists(output_path):
                             output_path = generate_new_filename(output_path)
@@ -450,4 +459,3 @@ def download_video(url_entry, video_resolution, download_option, is_playlist_var
         showerror(title='Download Error', message=f'An error occurred while trying to download the video: {e}')
         update_progress_label('', progress_label, window)
         progress_bar['value'] = 0
-
