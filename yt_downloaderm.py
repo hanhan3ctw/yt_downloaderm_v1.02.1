@@ -251,7 +251,7 @@ def download_video(url_entry, video_resolution, download_option, is_playlist_var
 
                         if download_type == 'video':  # 當前選項為視頻下載
                             video_stream = video.streams.filter(res=getTheBestResolution(video), adaptive=True, file_extension='mp4').first()
-                            audio_stream = video.streams.filter(only_audio=True, file_extension='mp4').first()
+                            audio_stream = get_best_audio_stream(video)
 
                             video_path = video_stream.download(filename='video.mp4')
                             audio_path = audio_stream.download(filename='audio.mp4')
@@ -275,7 +275,7 @@ def download_video(url_entry, video_resolution, download_option, is_playlist_var
                             else:
                                 success_count += 1
                         else:  # 當前選項為音頻下載
-                            audio_stream = video.streams.filter(only_audio=True, file_extension='mp4').first()
+                            audio_stream = get_best_audio_stream(video)
                             audio_path = audio_stream.download(filename='audio.mp4')
                             
                             video_title = sanitize_filename(video.title)  # 獲取影片標題並替換空格
@@ -306,7 +306,7 @@ def download_video(url_entry, video_resolution, download_option, is_playlist_var
                     
                     if download_type == 'video':  # 當前選項為視頻下載
                         video_stream = video.streams.filter(res=resolution_or_bitrate, adaptive=True, file_extension='mp4').first()
-                        audio_stream = video.streams.filter(only_audio=True, file_extension='mp4').first()
+                        audio_stream = get_best_audio_stream(video)
 
                         video_path = video_stream.download(filename='video.mp4')
                         audio_path = audio_stream.download(filename='audio.mp4')
@@ -417,7 +417,7 @@ def download_video(url_entry, video_resolution, download_option, is_playlist_var
                                     showerror(title='FFmpeg Error', message=f'Error processing media: {process.stderr.read()}')
 
                     else:  # 當前選項為音頻下載
-                        audio_stream = video.streams.filter(only_audio=True, file_extension='mp4').first()
+                        audio_stream = get_best_audio_stream(video)
                         audio_path = audio_stream.download(filename='audio.mp4')
                         
                         video_title = sanitize_filename(video.title)  # 獲取影片標題並替換空格
