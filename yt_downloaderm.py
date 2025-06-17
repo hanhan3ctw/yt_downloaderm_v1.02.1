@@ -228,8 +228,8 @@ def download_video(url_entry, video_resolution, download_option, is_playlist_var
 
                         if download_type == 'video':  # 當前選項為視頻下載
                             video_stream = video.streams.filter(res=getTheBestResolution(video), adaptive=True, file_extension='mp4').first()
-                            audio_stream = video.streams.filter(only_audio=True, file_extension='mp4').first()
-
+                            audio_stream = get_best_audio_stream(video)
+                            audio_bitrate = audio_stream.abr            # 取得 '256kbps' 或 '160kbps'
                             video_path = video_stream.download(filename='video.mp4')
                             audio_path = audio_stream.download(filename='audio.mp4')
 
@@ -240,7 +240,13 @@ def download_video(url_entry, video_resolution, download_option, is_playlist_var
                             ffmpeg_path = os.path.join(os.path.dirname(__file__), 'ffmpeg', 'bin', 'ffmpeg.exe')  # 指定 ffmpeg 的完整路徑
 
                             command = [
-                                ffmpeg_path, '-i', video_path, '-i', audio_path, '-c:v', 'copy', '-c:a', 'aac', '-strict', 'experimental', output_path
+                                ffmpeg_path, '-y',
+                                '-i', video_path,
+                                '-i', audio_path,
+                                '-c:v', 'copy',          # 視訊不重編
+                                '-c:a', 'aac',           # 音訊轉 AAC
+                                '-b:a', audio_bitrate,   # ☆ 把剛取得的位元率塞進來
+                                output_path
                             ]
                             process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding='utf-8', creationflags=subprocess.CREATE_NO_WINDOW)
                             update_progress_bar(process, video.length, progress_bar, progress_label, window)
@@ -252,7 +258,8 @@ def download_video(url_entry, video_resolution, download_option, is_playlist_var
                             else:
                                 success_count += 1
                         else:  # 當前選項為音頻下載
-                            audio_stream = video.streams.filter(only_audio=True, file_extension='mp4').first()
+                            audio_stream = get_best_audio_stream(video)
+                            audio_bitrate = audio_stream.abr            # 取得 '256kbps' 或 '160kbps'
                             audio_path = audio_stream.download(filename='audio.mp4')
                             
                             video_title = sanitize_filename(video.title)  # 獲取影片標題並替換空格
@@ -262,8 +269,14 @@ def download_video(url_entry, video_resolution, download_option, is_playlist_var
                             ffmpeg_path = os.path.join(os.path.dirname(__file__), 'ffmpeg', 'bin', 'ffmpeg.exe')  # 指定 ffmpeg 的完整路徑
                             
                             command = [
-                                    ffmpeg_path, '-i', audio_path, '-q:a', '0', '-map', 'a', output_path
-                                ]
+                                ffmpeg_path, '-y',
+                                '-i', video_path,
+                                '-i', audio_path,
+                                '-c:v', 'copy',          # 視訊不重編
+                                '-c:a', 'aac',           # 音訊轉 AAC
+                                '-b:a', audio_bitrate,   # ☆ 把剛取得的位元率塞進來
+                                output_path
+                            ]
                             process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding='utf-8', creationflags=subprocess.CREATE_NO_WINDOW)
                             update_progress_bar(process, video.length, progress_bar, progress_label, window)
                             process.wait()
@@ -283,7 +296,8 @@ def download_video(url_entry, video_resolution, download_option, is_playlist_var
                     
                     if download_type == 'video':  # 當前選項為視頻下載
                         video_stream = video.streams.filter(res=resolution_or_bitrate, adaptive=True, file_extension='mp4').first()
-                        audio_stream = video.streams.filter(only_audio=True, file_extension='mp4').first()
+                        audio_stream = get_best_audio_stream(video)
+                        audio_bitrate = audio_stream.abr            # 取得 '256kbps' 或 '160kbps'
 
                         video_path = video_stream.download(filename='video.mp4')
                         audio_path = audio_stream.download(filename='audio.mp4')
@@ -297,7 +311,13 @@ def download_video(url_entry, video_resolution, download_option, is_playlist_var
                         # 判断处理选项
                         if process_type == 'none':
                             command = [
-                                ffmpeg_path, '-i', video_path, '-i', audio_path, '-c:v', 'copy', '-c:a', 'aac', '-strict', 'experimental', output_path
+                                ffmpeg_path, '-y',
+                                '-i', video_path,
+                                '-i', audio_path,
+                                '-c:v', 'copy',          # 視訊不重編
+                                '-c:a', 'aac',           # 音訊轉 AAC
+                                '-b:a', audio_bitrate,   # ☆ 把剛取得的位元率塞進來
+                                output_path
                             ]
                             process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding='utf-8', errors='replace', creationflags=subprocess.CREATE_NO_WINDOW)
                             update_progress_bar(process, video.length, progress_bar, progress_label, window)
@@ -380,7 +400,13 @@ def download_video(url_entry, video_resolution, download_option, is_playlist_var
                                 end_duration_time = seconds_to_time(end_duration)
 
                                 command = [
-                                    ffmpeg_path, '-ss', start_offset_time, '-i', tmp_output, '-to', end_duration_time, '-c:v', 'libx264', '-c:a', 'aac', output_path
+                                    ffmpeg_path, '-y',
+                                    '-i', video_path,
+                                    '-i', audio_path,
+                                    '-c:v', 'copy',          # 視訊不重編
+                                    '-c:a', 'aac',           # 音訊轉 AAC
+                                    '-b:a', audio_bitrate,   # ☆ 把剛取得的位元率塞進來
+                                    output_path
                                 ]
 
                                 process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding='utf-8', creationflags=subprocess.CREATE_NO_WINDOW)
@@ -394,7 +420,8 @@ def download_video(url_entry, video_resolution, download_option, is_playlist_var
                                     showerror(title='FFmpeg Error', message=f'Error processing media: {process.stderr.read()}')
 
                     else:  # 當前選項為音頻下載
-                        audio_stream = video.streams.filter(only_audio=True, file_extension='mp4').first()
+                        audio_stream = get_best_audio_stream(video)
+                    audio_bitrate = audio_stream.abr            # 取得 '256kbps' 或 '160kbps'
                         audio_path = audio_stream.download(filename='audio.mp4')
                         
                         video_title = sanitize_filename(video.title)  # 獲取影片標題並替換空格
